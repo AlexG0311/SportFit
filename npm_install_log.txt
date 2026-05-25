@@ -1,0 +1,46 @@
+npm verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+npm info using npm@11.9.0
+npm info using node@v24.14.0
+npm verbose title npm install
+npm verbose argv "install" "--loglevel" "verbose"
+npm verbose logfile logs-max:10 dir:C:\Users\alexd\AppData\Local\npm-cache\_logs\2026-05-25T00_13_04_331Z-
+npm verbose logfile C:\Users\alexd\AppData\Local\npm-cache\_logs\2026-05-25T00_13_04_331Z-debug-0.log
+npm http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 615ms
+npm http cache https://registry.npmjs.org/uuid 13ms (cache hit)
+npm http cache https://registry.npmjs.org/postcss 16ms (cache hit)
+npm http cache https://registry.npmjs.org/@expo%2fmetro-config 7ms (cache hit)
+npm http cache https://registry.npmjs.org/xcode 12ms (cache hit)
+npm http cache https://registry.npmjs.org/expo 14ms (cache hit)
+npm http cache https://registry.npmjs.org/@expo%2fcli 26ms (cache hit)
+npm http cache https://registry.npmjs.org/@expo%2fconfig-plugins 8ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-camera 25ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-font 28ms (cache hit)
+npm http cache https://registry.npmjs.org/babel-preset-expo 35ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-image-loader 38ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-splash-screen 45ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-linear-gradient 49ms (cache hit)
+npm http cache https://registry.npmjs.org/@expo%2fprebuild-config 53ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-image-picker 55ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-asset 56ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-keep-awake 59ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-file-system 61ms (cache hit)
+npm http cache https://registry.npmjs.org/expo-constants 66ms (cache hit)
+npm http cache https://registry.npmjs.org/@expo%2fconfig 12ms (cache hit)
+
+up to date, audited 797 packages in 2s
+
+80 packages are looking for funding
+  run `npm fund` for details
+
+12 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm verbose cwd C:\Users\alexd\Desktop\Prototipo Innovacion\SportFit
+npm verbose os Windows_NT 10.0.26200
+npm verbose node v24.14.0
+npm verbose npm  v11.9.0
+npm verbose exit 0
+npm info ok
