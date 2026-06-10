@@ -15,7 +15,7 @@ export const SOMATOTYPE_DESCRIPTIONS = {
 export const SOMATOTYPE_COLORS = {
   Ectomorfo: '#00D2FF',
   Mesomorfo: '#6C5CE7',
-  Endomorfo: '#FF5252',
+  Endomorfo: '#FF5252', 
 };
 
 export const BMI_CATEGORIES = [
@@ -45,4 +45,7 @@ export const SCREEN_NAMES = {
   MAIN_TABS: 'MainTabs',
   AUTH_STACK: 'AuthStack',
   HOME_STACK: 'HomeStack',
+  CHAT: 'Chat',
+  PLANNER: 'Planner',
+  ACHIEVEMENTS: 'Achievements',
 };

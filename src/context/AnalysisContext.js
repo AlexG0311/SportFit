@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeBody } from '../services/analysisService';
 import { getHistory } from '../services/historyService';
 import { getRecommendations } from '../services/recommendationService';
@@ -52,11 +53,35 @@ const analysisReducer = (state, action) => {
 export const AnalysisProvider = ({ children }) => {
   const [state, dispatch] = useReducer(analysisReducer, initialState);
 
-  const analyze = async (imageUri) => {
+  // Load history from AsyncStorage on mount
+  useEffect(() => {
+    const loadLocalHistory = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('analysis_history');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          dispatch({ type: 'HISTORY_SUCCESS', payload: parsed });
+          if (parsed.length > 0) {
+            dispatch({ type: 'SET_CURRENT_ANALYSIS', payload: parsed[0] });
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load history', e);
+      }
+    };
+    loadLocalHistory();
+  }, []);
+
+  const analyze = async (imageUri, gender, heightM, weightKg, age = null) => {
     dispatch({ type: 'ANALYZE_START' });
     try {
-      const data = await analyzeBody(imageUri);
+      const data = await analyzeBody(imageUri, gender, heightM, weightKg, age);
       dispatch({ type: 'ANALYZE_SUCCESS', payload: data });
+      
+      // Save to local storage
+      const newHistory = [data, ...state.history].slice(0, 10); // Keep last 10
+      await AsyncStorage.setItem('analysis_history', JSON.stringify(newHistory));
+      
       return data;
     } catch (error) {
       dispatch({ type: 'ANALYZE_ERROR', payload: error.message || 'Error al analizar' });
@@ -72,10 +97,9 @@ export const AnalysisProvider = ({ children }) => {
       return data;
     } catch (error) {
       dispatch({ type: 'HISTORY_ERROR', payload: error.message });
-      // Return mock data for demo
-      const mockHistory = getMockHistory();
-      dispatch({ type: 'HISTORY_SUCCESS', payload: mockHistory });
-      return mockHistory;
+      // Fallback to state history (already loaded from storage)
+      dispatch({ type: 'HISTORY_SUCCESS', payload: state.history });
+      return state.history;
     }
   };
 
@@ -87,10 +111,7 @@ export const AnalysisProvider = ({ children }) => {
       return data;
     } catch (error) {
       dispatch({ type: 'RECOMMENDATIONS_ERROR', payload: error.message });
-      // Return mock data for demo
-      const mockRecs = getMockRecommendations();
-      dispatch({ type: 'RECOMMENDATIONS_SUCCESS', payload: mockRecs });
-      return mockRecs;
+      return [];
     }
   };
 
@@ -123,79 +144,5 @@ export const useAnalysis = () => {
   }
   return context;
 };
-
-// Mock data for demo/development
-const getMockHistory = () => [
-  {
-    id: '1',
-    date: '2026-05-24T10:30:00Z',
-    somatotype: 'Mesomorfo',
-    accuracy: 92.5,
-    bmi: 23.4,
-    bodyFat: 15.2,
-    muscleMass: 42.1,
-  },
-  {
-    id: '2',
-    date: '2026-05-17T14:15:00Z',
-    somatotype: 'Mesomorfo',
-    accuracy: 89.8,
-    bmi: 23.8,
-    bodyFat: 16.0,
-    muscleMass: 41.5,
-  },
-  {
-    id: '3',
-    date: '2026-05-10T09:00:00Z',
-    somatotype: 'Endomorfo',
-    accuracy: 85.3,
-    bmi: 24.5,
-    bodyFat: 18.2,
-    muscleMass: 40.0,
-  },
-];
-
-const getMockRecommendations = () => [
-  {
-    id: '1',
-    name: 'Natación',
-    description: 'Ejercicio de cuerpo completo ideal para tu tipo corporal.',
-    intensity: 'medium',
-    icon: 'water-outline',
-    benefits: ['Cardio', 'Resistencia', 'Flexibilidad'],
-  },
-  {
-    id: '2',
-    name: 'Entrenamiento de Fuerza',
-    description: 'Desarrolla masa muscular y mejora tu composición corporal.',
-    intensity: 'high',
-    icon: 'barbell-outline',
-    benefits: ['Fuerza', 'Masa muscular', 'Metabolismo'],
-  },
-  {
-    id: '3',
-    name: 'Yoga',
-    description: 'Mejora la flexibilidad y reduce el estrés.',
-    intensity: 'low',
-    icon: 'body-outline',
-    benefits: ['Flexibilidad', 'Balance', 'Relajación'],
-  },
-  {
-    id: '4',
-    name: 'HIIT',
-    description: 'Entrenamiento de alta intensidad para quemar grasa rápidamente.',
-    intensity: 'high',
-    icon: 'flame-outline',
-    benefits: ['Quema grasa', 'Cardio', 'Metabolismo'],
-  },
-  {
-    id: '5',
-    name: 'Ciclismo',
-    description: 'Excelente para la resistencia cardiovascular y piernas.',
-    intensity: 'medium',
-    icon: 'bicycle-outline',
-    benefits: ['Cardio', 'Piernas', 'Resistencia'],
-  },
-];
 
 export default AnalysisContext;
