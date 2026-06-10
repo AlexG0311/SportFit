@@ -6,11 +6,13 @@ import Button from '../components/common/Button';
 import { analyzeBody } from '../services/analysisService';
 import { useNavigation } from '@react-navigation/native';
 import { SCREEN_NAMES } from '../utils/constants';
+import { useAuth } from '../context/AuthContext';
 
 const CameraScreen = () => {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
+  const auth = useAuth();
 
   useEffect(() => {
     (async () => {
@@ -21,12 +23,23 @@ const CameraScreen = () => {
 
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (permission.status !== 'granted') {
-      return;
-    }
+    if (permission.status !== 'granted') return;
 
     const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+      base64: false,
+    });
+
+    if (!result.canceled && result.assets?.length > 0) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
       quality: 0.8,
       base64: false,
     });
@@ -40,9 +53,12 @@ const CameraScreen = () => {
     if (!image) return;
     setLoading(true);
     try {
-      const res = await analyzeBody(image);
-      navigation.navigate(SCREEN_NAMES.PROCESSING, { analysisId: res?.id, payload: res });
+      // Enviamos el género del usuario autenticado
+      const userGender = auth.user?.gender || 'Male';
+      const res = await analyzeBody(image, userGender);
+      navigation.navigate(SCREEN_NAMES.PROCESSING, { payload: res });
     } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -55,13 +71,20 @@ const CameraScreen = () => {
           <>
             <Text className="text-white text-lg mb-4">Guía: coloca tu cuerpo completo en el marco</Text>
             <Button title="Abrir cámara" onPress={takePhoto} />
+            <View style={{ height: 12 }} />
+            <Button title="Elegir de galería" variant="secondary" onPress={pickImage} />
           </>
         ) : (
           <>
             <Image source={{ uri: image }} style={{ width: 260, height: 420, borderRadius: 16 }} />
             <View className="mt-4 w-full">
               <Button title="Analizar imagen" onPress={onAnalyze} loading={loading} />
-              <Button title="Volver" variant="secondary" onPress={() => setImage(null)} style={{ marginTop: 8 }} />
+              <Button
+                title="Volver"
+                variant="secondary"
+                onPress={() => setImage(null)}
+                style={{ marginTop: 8 }}
+              />
             </View>
           </>
         )}

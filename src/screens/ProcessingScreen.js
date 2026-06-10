@@ -12,19 +12,23 @@ const ProcessingScreen = () => {
 
   useEffect(() => {
     const t = setInterval(() => {
-      setStepIndex((v) => {
-        if (v >= steps.length - 1) {
-          clearInterval(t);
-          // after processing navigate to Result with payload placeholder
-          navigation.replace('Result', { result: route.params?.payload || null });
-          return v;
-        }
-        return v + 1;
-      });
+      setStepIndex((v) => (v >= steps.length - 1 ? v : v + 1));
     }, 1400);
 
     return () => clearInterval(t);
   }, []);
+
+  // Navigate when we've reached the last step, but do it outside render
+  useEffect(() => {
+    if (stepIndex >= steps.length - 1) {
+      // schedule navigation on next tick to avoid React "setState in render" errors
+      const id = setTimeout(() => {
+        navigation.replace('Result', { result: route.params?.payload || null });
+      }, 0);
+      return () => clearTimeout(id);
+    }
+    return undefined;
+  }, [stepIndex, navigation, route.params]);
 
   return (
     <View className="flex-1 bg-[#08080B] items-center justify-center p-6">
