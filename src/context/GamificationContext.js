@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const GamificationContext = createContext(null);
 
 export const ACHIEVEMENTS = [
-  { id: 'first_scan', title: 'Primer Paso', description: 'Realizaste tu primer escaneo corporal', icon: 'scan', color: '#6C5CE7' },
+  { id: 'quiz_complete', title: 'Primer Paso', description: 'Completaste el cuestionario de somatotipo', icon: 'clipboard', color: '#6C5CE7' },
   { id: 'coach_chat', title: 'Alumno Curioso', description: 'Hablas con tu AI Coach por primera vez', icon: 'chatbubbles', color: '#00D2FF' },
   { id: 'planner_gen', title: 'Mente Maestra', description: 'Generaste tu primer plan semanal', icon: 'calendar', color: '#FFD600' },
   { id: 'workout_done', title: 'Sudando la Gota Gorda', description: 'Completaste tu primer entrenamiento', icon: 'barbell', color: '#FF5252' },

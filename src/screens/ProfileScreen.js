@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Image, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Card from '../components/common/Card';
-import { useNavigation } from '@react-navigation/native';
-import { SCREEN_NAMES } from '../utils/constants';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { SCREEN_NAMES, SOMATOTYPE_COLORS } from '../utils/constants';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
+import { getQuizHistory } from '../services/quizHistoryService';
 import { Ionicons } from '@expo/vector-icons';
 
 const ProfileScreen = () => {
@@ -18,6 +19,24 @@ const ProfileScreen = () => {
   const [tempHeight, setTempHeight] = useState(auth.user?.height ? String(auth.user.height) : '');
   const [tempWeight, setTempWeight] = useState(auth.user?.weight ? String(auth.user.weight) : '');
   const [tempAge, setTempAge] = useState(auth.user?.age ? String(auth.user.age) : '');
+  const [quizHistory, setQuizHistory] = useState([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getQuizHistory().then(setQuizHistory);
+    }, [])
+  );
+
+  const viewHistoryRecommendations = (entry) => {
+    navigation.navigate(SCREEN_NAMES.QUIZ, {
+      screen: SCREEN_NAMES.RECOMMENDATION,
+      params: {
+        recommendations: entry.recommendations,
+        somatotype: entry.somatotype,
+        fromQuiz: false,
+      },
+    });
+  };
 
   const handleSave = () => {
     auth.updateUser({ 
@@ -154,17 +173,64 @@ const ProfileScreen = () => {
         )}
       </Card>
 
-      {/* ── Acceso a Historial y Logros (NUEVO) ── */}
+      {auth.user?.somatotype && (
+        <Card style={{ marginBottom: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
+            <Ionicons name="body-outline" size={24} color="#6C5CE7" style={{ marginRight: 12 }} />
+            <View>
+              <Text style={{ color: '#8B8BA3', fontSize: 12 }}>Somatotipo</Text>
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{auth.user.somatotype}</Text>
+            </View>
+          </View>
+        </Card>
+      )}
+
+      {quizHistory.length > 0 && (
+        <Card style={{ marginBottom: 20, padding: 16 }}>
+          <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginBottom: 14 }}>
+            Historial de cuestionarios
+          </Text>
+          {quizHistory.slice(0, 5).map((entry) => {
+            const color = SOMATOTYPE_COLORS[entry.somatotype] || '#6C5CE7';
+            return (
+              <TouchableOpacity
+                key={entry.id}
+                onPress={() => viewHistoryRecommendations(entry)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#1E1E2E',
+                }}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    backgroundColor: color + '22',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 12,
+                  }}
+                >
+                  <Ionicons name="clipboard" size={18} color={color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: 'white', fontWeight: '600' }}>{entry.somatotype}</Text>
+                  <Text style={{ color: '#8B8BA3', fontSize: 12, marginTop: 2 }}>
+                    {new Date(entry.date).toLocaleDateString('es-ES')} · {entry.recommendationCount} recomendaciones
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#8B8BA3" />
+              </TouchableOpacity>
+            );
+          })}
+        </Card>
+      )}
+
       <Card style={{ marginBottom: 20 }}>
-        <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}
-          onPress={() => navigation.navigate(SCREEN_NAMES.HISTORY)}
-        >
-          <Ionicons name="time-outline" size={24} color="#6C5CE7" style={{ marginRight: 12 }} />
-          <Text style={{ color: 'white', fontSize: 16 }}>Historial de análisis</Text>
-          <Ionicons name="chevron-forward" size={20} color="#8B8BA3" style={{ marginLeft: 'auto' }} />
-        </TouchableOpacity>
-        <View style={{ height: 1, backgroundColor: '#1E1E2E', marginVertical: 8 }} />
         <TouchableOpacity
           style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}
           onPress={() => navigation.navigate(SCREEN_NAMES.ACHIEVEMENTS)}

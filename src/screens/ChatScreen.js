@@ -3,7 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
-import { useAnalysis } from '../context/AnalysisContext';
 import { useGamification } from '../context/GamificationContext';
 import { sendChatMessage } from '../services/coachService';
 
@@ -27,7 +26,6 @@ const ChatMessage = ({ message }) => {
 
 const ChatScreen = () => {
   const { user } = useAuth();
-  const { currentAnalysis } = useAnalysis();
   const { unlockAchievement } = useGamification();
   
   const [messages, setMessages] = useState([]);
@@ -58,7 +56,7 @@ const ChatScreen = () => {
         // Mensaje de bienvenida inicial
         const welcomeMessage = { 
           role: 'model', 
-          content: `¡Hola ${user?.name?.split(' ')[0] || 'Atleta'}! Soy tu AI Coach personal. ${currentAnalysis ? `He notado que tu somatotipo es ${currentAnalysis.somatotype}. ` : ''}¿En qué puedo ayudarte hoy con tu entrenamiento o nutrición?` 
+          content: `¡Hola ${user?.name?.split(' ')[0] || 'Atleta'}! Soy tu AI Coach personal. ${user?.somatotype ? `He notado que tu somatotipo es ${user.somatotype}. ` : ''}¿En qué puedo ayudarte hoy con tu entrenamiento o nutrición?` 
         };
         setMessages([welcomeMessage]);
       }
@@ -121,7 +119,7 @@ const ChatScreen = () => {
     try {
       const response = await sendChatMessage(
         newMessages,
-        currentAnalysis?.somatotype,
+        user?.somatotype,
         user?.height,
         user?.weight,
         user?.age,

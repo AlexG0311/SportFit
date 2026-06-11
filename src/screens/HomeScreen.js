@@ -1,166 +1,211 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ImageBackground } from 'react-native';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
-import { useAuth } from '../context/AuthContext';
-import { useAnalysis } from '../context/AnalysisContext';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { SCREEN_NAMES, SOMATOTYPE_COLORS } from '../utils/constants';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import Card from '../components/common/Card';
+import { useAuth } from '../context/AuthContext';
+import { useGamification } from '../context/GamificationContext';
+import { getLatestQuizResult, getStreak } from '../services/quizHistoryService';
+import {
+  SCREEN_NAMES,
+  SOMATOTYPE_COLORS,
+  SOMATOTYPE_DESCRIPTIONS,
+  SOMATOTYPE_ICONS,
+} from '../utils/constants';
+
+const QuickAction = ({ icon, label, color, onPress }) => (
+  <TouchableOpacity onPress={onPress} style={{ alignItems: 'center', width: '25%' }}>
+    <View
+      style={{
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        backgroundColor: color + '22',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+      }}
+    >
+      <Ionicons name={icon} size={24} color={color} />
+    </View>
+    <Text style={{ color: '#8B8BA3', fontSize: 11, textAlign: 'center' }}>{label}</Text>
+  </TouchableOpacity>
+);
 
 const HomeScreen = () => {
-  const auth = useAuth();
+  const { user } = useAuth();
+  const { unlockedAchievements } = useGamification();
   const navigation = useNavigation();
-  const { currentAnalysis, history } = useAnalysis();
+  const [latestResult, setLatestResult] = useState(null);
+  const [streak, setStreak] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleAnalyzePress = () => {
-    navigation.navigate(SCREEN_NAMES.CAMERA);
+  const loadData = async () => {
+    const [result, streakCount] = await Promise.all([getLatestQuizResult(), getStreak()]);
+    setLatestResult(result);
+    setStreak(streakCount);
   };
 
-  const getTimeGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Buenos días';
-    if (hour < 19) return 'Buenas tardes';
-    return 'Buenas noches';
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const somatotype = user?.somatotype || latestResult?.somatotype;
+  const somaColor = SOMATOTYPE_COLORS[somatotype] || '#6C5CE7';
+  const somaIcon = SOMATOTYPE_ICONS[somatotype] || 'body-outline';
+
+  const goToTab = (tabName) => navigation.navigate(tabName);
+
+  const viewRecommendations = () => {
+    if (!latestResult?.recommendations?.length) {
+      goToTab(SCREEN_NAMES.QUIZ);
+      return;
+    }
+    navigation.navigate(SCREEN_NAMES.QUIZ, {
+      screen: SCREEN_NAMES.RECOMMENDATION,
+      params: {
+        recommendations: latestResult.recommendations,
+        somatotype: latestResult.somatotype,
+        fromQuiz: false,
+      },
+    });
   };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: '#08080B', padding: 16 }}>
-      
-      {/* ── Header ── */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, marginTop: 8 }}>
-        <View>
-          <Text style={{ color: '#8B8BA3', fontSize: 14 }}>{getTimeGreeting()},</Text>
-          <Text style={{ color: 'white', fontSize: 26, fontWeight: 'bold' }}>
-            {auth.user?.name?.split(' ')[0] || 'Atleta'}
-          </Text>
-        </View>
-        <TouchableOpacity 
-          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#1E1E2E', justifyContent: 'center', alignItems: 'center' }}
-          onPress={() => navigation.navigate(SCREEN_NAMES.PROFILE)}
-        >
-          <Ionicons name="person" size={20} color="#6C5CE7" />
-        </TouchableOpacity>
-      </View>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: '#08080B' }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
+    >
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#08080B']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ borderRadius: 20, padding: 20, marginBottom: 20 }}
+      >
+        <Text style={{ color: '#8B8BA3', fontSize: 14 }}>Bienvenido de vuelta,</Text>
+        <Text style={{ color: 'white', fontSize: 26, fontWeight: 'bold', marginBottom: 16 }}>
+          {user?.name?.split(' ')[0] || 'Atleta'}
+        </Text>
 
-      {/* ── Main Action Banner ── */}
-      <TouchableOpacity activeOpacity={0.9} onPress={handleAnalyzePress} style={{ marginBottom: 24 }}>
-        <View style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: '#6C5CE7' }}>
-          <View style={{ padding: 20, flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 6 }}>
-                Nuevo Análisis Corporal
-              </Text>
-              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18 }}>
-                Descubre tu somatotipo y recibe una rutina de IA basada en tus proporciones.
-              </Text>
-              <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 12, flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="camera" size={14} color="white" style={{ marginRight: 6 }} />
-                <Text style={{ color: 'white', fontWeight: '600', fontSize: 12 }}>Escanear Ahora</Text>
-              </View>
-            </View>
-            <View style={{ width: 80, height: 80, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 40, justifyContent: 'center', alignItems: 'center' }}>
-              <Ionicons name="scan-outline" size={40} color="white" />
-            </View>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ flex: 1, backgroundColor: '#ffffff11', borderRadius: 12, padding: 12 }}>
+            <Ionicons name="flame" size={20} color="#FF5252" />
+            <Text style={{ color: 'white', fontSize: 22, fontWeight: 'bold', marginTop: 6 }}>{streak}</Text>
+            <Text style={{ color: '#8B8BA3', fontSize: 11 }}>días de racha</Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: '#ffffff11', borderRadius: 12, padding: 12 }}>
+            <Ionicons name="trophy" size={20} color="#FFD600" />
+            <Text style={{ color: 'white', fontSize: 22, fontWeight: 'bold', marginTop: 6 }}>
+              {unlockedAchievements.length}
+            </Text>
+            <Text style={{ color: '#8B8BA3', fontSize: 11 }}>logros</Text>
           </View>
         </View>
-      </TouchableOpacity>
+      </LinearGradient>
 
-      {currentAnalysis ? (
-        <>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
-            <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Último Resultado</Text>
-            <TouchableOpacity onPress={() => navigation.navigate(SCREEN_NAMES.RESULT, { result: currentAnalysis })}>
-              <Text style={{ color: '#6C5CE7', fontWeight: '600', fontSize: 13 }}>Ver todo</Text>
+      {somatotype ? (
+        <Card gradient style={{ marginBottom: 20, padding: 18 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: somaColor + '33',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginRight: 14,
+              }}
+            >
+              <Ionicons name={somaIcon} size={24} color={somaColor} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#8B8BA3', fontSize: 12 }}>Tu somatotipo</Text>
+              <Text style={{ color: somaColor, fontSize: 22, fontWeight: 'bold' }}>{somatotype}</Text>
+            </View>
+          </View>
+          <Text style={{ color: '#aaa', fontSize: 13, lineHeight: 20, marginBottom: 14 }}>
+            {SOMATOTYPE_DESCRIPTIONS[somatotype]}
+          </Text>
+          {latestResult?.recommendations?.length > 0 && (
+            <TouchableOpacity
+              onPress={viewRecommendations}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: somaColor + '22',
+                borderRadius: 12,
+                padding: 12,
+              }}
+            >
+              <Ionicons name="sparkles" size={18} color={somaColor} style={{ marginRight: 8 }} />
+              <Text style={{ color: 'white', fontWeight: '600', flex: 1 }}>
+                Ver {latestResult.recommendationCount} recomendaciones
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={somaColor} />
             </TouchableOpacity>
-          </View>
-
-          <Card style={{ marginBottom: 24 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  backgroundColor: SOMATOTYPE_COLORS[currentAnalysis.somatotype?.split('-')[0]] || '#6C5CE7',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="body" size={24} color="white" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#8B8BA3', fontSize: 12 }}>Tu Somatotipo</Text>
-                <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>{currentAnalysis.somatotype}</Text>
-              </View>
-              <View style={{ backgroundColor: 'rgba(108, 92, 231, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                <Text style={{ color: '#6C5CE7', fontSize: 12, fontWeight: 'bold' }}>IMC: {currentAnalysis.imc}</Text>
-              </View>
-            </View>
-            
-            <View style={{ flexDirection: 'row', backgroundColor: '#15151A', borderRadius: 8, padding: 10 }}>
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ color: '#FF5252', fontWeight: 'bold', fontSize: 16 }}>{currentAnalysis.endomorphy}</Text>
-                <Text style={{ color: '#8B8BA3', fontSize: 10 }}>Endo</Text>
-              </View>
-              <View style={{ width: 1, backgroundColor: '#2A2A35' }} />
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ color: '#6C5CE7', fontWeight: 'bold', fontSize: 16 }}>{currentAnalysis.mesomorphy}</Text>
-                <Text style={{ color: '#8B8BA3', fontSize: 10 }}>Meso</Text>
-              </View>
-              <View style={{ width: 1, backgroundColor: '#2A2A35' }} />
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ color: '#00D2FF', fontWeight: 'bold', fontSize: 16 }}>{currentAnalysis.ectomorphy}</Text>
-                <Text style={{ color: '#8B8BA3', fontSize: 10 }}>Ecto</Text>
-              </View>
-            </View>
-          </Card>
-
-          {currentAnalysis.recommendations?.length > 0 && (
-            <>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
-                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Recomendado por IA</Text>
-                <TouchableOpacity onPress={() => navigation.navigate(SCREEN_NAMES.RECOMMENDATION, { recommendations: currentAnalysis.recommendations, somatotype: currentAnalysis.somatotype })}>
-                  <Text style={{ color: '#6C5CE7', fontWeight: '600', fontSize: 13 }}>Ver {currentAnalysis.recommendations.length}</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate(SCREEN_NAMES.RECOMMENDATION, { recommendations: currentAnalysis.recommendations, somatotype: currentAnalysis.somatotype })}
-              >
-                <Card style={{ marginBottom: 20, padding: 0, overflow: 'hidden' }}>
-                  <View style={{ padding: 16, borderLeftWidth: 4, borderLeftColor: '#6C5CE7' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                      <Ionicons name="sparkles" size={16} color="#FFD600" style={{ marginRight: 6 }} />
-                      <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>
-                        {currentAnalysis.recommendations[0].name}
-                      </Text>
-                    </View>
-                    <Text style={{ color: '#8B8BA3', fontSize: 13, lineHeight: 18 }} numberOfLines={2}>
-                      {currentAnalysis.recommendations[0].description}
-                    </Text>
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            </>
           )}
-        </>
+        </Card>
       ) : (
-        <Card style={{ alignItems: 'center', padding: 32, marginTop: 20 }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(108, 92, 231, 0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
-            <Ionicons name="fitness-outline" size={32} color="#6C5CE7" />
-          </View>
-          <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
-            Empieza tu transformación
+        <Card style={{ marginBottom: 20, padding: 20, alignItems: 'center' }}>
+          <Ionicons name="clipboard-outline" size={40} color="#6C5CE7" style={{ marginBottom: 12 }} />
+          <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>
+            Descubre tu somatotipo
           </Text>
-          <Text style={{ color: '#8B8BA3', textAlign: 'center', lineHeight: 20 }}>
-            Tómate una foto y nuestra IA detectará tus proporciones para recomendarte el mejor camino.
+          <Text style={{ color: '#8B8BA3', textAlign: 'center', marginBottom: 16, lineHeight: 20 }}>
+            Completa el cuestionario para obtener recomendaciones personalizadas con IA.
           </Text>
+          <TouchableOpacity
+            onPress={() => goToTab(SCREEN_NAMES.QUIZ)}
+            style={{ backgroundColor: '#6C5CE7', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>Empezar cuestionario</Text>
+          </TouchableOpacity>
         </Card>
       )}
 
+      <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginBottom: 14 }}>Accesos rápidos</Text>
+      <Card style={{ marginBottom: 20, paddingVertical: 16 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <QuickAction icon="clipboard-outline" label="Cuestionario" color="#6C5CE7" onPress={() => goToTab(SCREEN_NAMES.QUIZ)} />
+          <QuickAction icon="calendar-outline" label="Rutina" color="#FFD600" onPress={() => goToTab(SCREEN_NAMES.PLANNER)} />
+          <QuickAction icon="chatbubble-outline" label="Coach IA" color="#00D2FF" onPress={() => goToTab(SCREEN_NAMES.CHAT)} />
+          <QuickAction icon="person-outline" label="Perfil" color="#00E676" onPress={() => goToTab(SCREEN_NAMES.PROFILE)} />
+        </View>
+      </Card>
+
+      {latestResult && (
+        <Card style={{ padding: 16 }}>
+          <Text style={{ color: 'white', fontSize: 15, fontWeight: '600', marginBottom: 8 }}>Último cuestionario</Text>
+          <Text style={{ color: '#8B8BA3', fontSize: 13 }}>
+            {new Date(latestResult.date).toLocaleDateString('es-ES', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </Text>
+          <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
+            {['ecto', 'meso', 'endo'].map((key) => (
+              <View key={key} style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: '#8B8BA3', fontSize: 10, marginBottom: 4 }}>
+                  {key === 'ecto' ? 'Ecto' : key === 'meso' ? 'Meso' : 'Endo'}
+                </Text>
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>{latestResult.scores?.[key] || 0}%</Text>
+              </View>
+            ))}
+          </View>
+        </Card>
+      )}
     </ScrollView>
   );
 };

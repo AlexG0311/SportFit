@@ -3,27 +3,29 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { useAnalysis } from '../context/AnalysisContext';
+import { useAuth } from '../context/AuthContext';
 import { useGamification } from '../context/GamificationContext';
 import { generatePlanner } from '../services/coachService';
 
 const PlannerScreen = () => {
-  const { currentAnalysis } = useAnalysis();
+  const { user } = useAuth();
   const { unlockAchievement } = useGamification();
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [completedDays, setCompletedDays] = useState({});
 
   const handleGenerate = async () => {
-    if (!currentAnalysis) return;
+    if (!user?.somatotype) return;
     setLoading(true);
     try {
+      
       const response = await generatePlanner(
-        currentAnalysis.somatotype,
+        user.somatotype,
         4, // Default to 4 days for now
         "ganar masa muscular y fuerza", 
         "intermedio"
       );
+
       if (response.success && response.plan) {
         setPlan(response.plan);
         unlockAchievement('planner_gen');
@@ -45,13 +47,13 @@ const PlannerScreen = () => {
     }
   };
 
-  if (!currentAnalysis) {
+  if (!user?.somatotype) {
     return (
       <View style={{ flex: 1, backgroundColor: '#08080B', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
         <Ionicons name="calendar-outline" size={64} color="#2A2A35" style={{ marginBottom: 16 }} />
         <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Planner Bloqueado</Text>
         <Text style={{ color: '#8B8BA3', textAlign: 'center' }}>
-          Necesitas realizar al menos un análisis corporal para que podamos generar tu rutina perfecta.
+          Completa el cuestionario de somatotipo para que podamos generar tu rutina perfecta.
         </Text>
       </View>
     );
@@ -61,7 +63,7 @@ const PlannerScreen = () => {
     <View style={{ flex: 1, backgroundColor: '#08080B' }}>
       <View style={{ padding: 16, paddingTop: 20, backgroundColor: '#15151A', borderBottomWidth: 1, borderBottomColor: '#1E1E2E' }}>
         <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>Tu Semana</Text>
-        <Text style={{ color: '#8B8BA3' }}>Rutina basada en tu somatotipo ({currentAnalysis.somatotype})</Text>
+        <Text style={{ color: '#8B8BA3' }}>Rutina basada en tu somatotipo ({user.somatotype})</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>

@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/context/AuthContext';
-import { AnalysisProvider } from './src/context/AnalysisContext';
 import { GamificationProvider, useGamification } from './src/context/GamificationContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { View, Text } from 'react-native';
@@ -30,17 +29,15 @@ const AchievementToast = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <AnalysisProvider>
-        <GamificationProvider>
-          <NavigationContainer>
-            <SafeAreaView style={{ flex: 1 }}>
-              <RootNavigator />
-              <AchievementToast />
-              <StatusBar style="light" />
-            </SafeAreaView>
-          </NavigationContainer>
-        </GamificationProvider>
-      </AnalysisProvider>
+      <GamificationProvider>
+        <NavigationContainer>
+          <SafeAreaView style={{ flex: 1 }}>
+            <RootNavigator />
+            <AchievementToast />
+            <StatusBar style="light" />
+          </SafeAreaView>
+        </NavigationContainer>
+      </GamificationProvider>
     </AuthProvider>
   );
 }

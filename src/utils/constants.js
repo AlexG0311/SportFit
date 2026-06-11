@@ -15,15 +15,20 @@ export const SOMATOTYPE_DESCRIPTIONS = {
 export const SOMATOTYPE_COLORS = {
   Ectomorfo: '#00D2FF',
   Mesomorfo: '#6C5CE7',
-  Endomorfo: '#FF5252', 
+  Endomorfo: '#FF5252',
 };
 
-export const BMI_CATEGORIES = [
-  { label: 'Bajo peso', min: 0, max: 18.5, color: '#00D2FF' },
-  { label: 'Normal', min: 18.5, max: 25, color: '#00E676' },
-  { label: 'Sobrepeso', min: 25, max: 30, color: '#FFD600' },
-  { label: 'Obesidad', min: 30, max: 100, color: '#FF5252' },
-];
+export const SOMATOTYPE_ICONS = {
+  Ectomorfo: 'leaf-outline',
+  Mesomorfo: 'flash-outline',
+  Endomorfo: 'shield-outline',
+};
+
+export const SCORE_COLORS = {
+  ecto: '#00D2FF',
+  meso: '#6C5CE7',
+  endo: '#FF5252',
+};
 
 export const INTENSITY_LEVELS = {
   low: { label: 'Baja', color: '#00E676', icon: 'flash-outline' },
@@ -36,15 +41,12 @@ export const SCREEN_NAMES = {
   LOGIN: 'Login',
   REGISTER: 'Register',
   HOME: 'Home',
-  CAMERA: 'Camera',
-  PROCESSING: 'Processing',
-  RESULT: 'Result',
+  QUIZ: 'Cuestionario',
+  SOMATOTYPE_RESULT: 'SomatotypeResult',
   RECOMMENDATION: 'Recommendation',
-  HISTORY: 'History',
   PROFILE: 'Profile',
   MAIN_TABS: 'MainTabs',
   AUTH_STACK: 'AuthStack',
-  HOME_STACK: 'HomeStack',
   CHAT: 'Chat',
   PLANNER: 'Planner',
   ACHIEVEMENTS: 'Achievements',
