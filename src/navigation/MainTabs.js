@@ -7,6 +7,7 @@ import PlannerScreen from '../screens/PlannerScreen';
 import { SCREEN_NAMES } from '../utils/constants';
 import QuizStack from './QuizStack';
 import { useAuth } from '../context/AuthContext';
+import MapScreen from '../screens/MapScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,6 +17,7 @@ const TAB_CONFIG = {
   [SCREEN_NAMES.PLANNER]: { icon: 'calendar', iconOutline: 'calendar-outline', label: 'Rutina' },
   [SCREEN_NAMES.CHAT]: { icon: 'chatbubble', iconOutline: 'chatbubble-outline', label: 'Coach' },
   [SCREEN_NAMES.PROFILE]: { icon: 'person', iconOutline: 'person-outline', label: 'Perfil' },
+  [SCREEN_NAMES.MAP]: { icon: 'map', iconOutline: 'map-outline', label: 'Mapa' },
 };
 
 
@@ -50,9 +52,11 @@ export default function MainTabs() {
     >
       <Tab.Screen name={SCREEN_NAMES.HOME} component={HomeScreen} />
       <Tab.Screen name={SCREEN_NAMES.QUIZ} component={QuizStack} />
+        <Tab.Screen name={SCREEN_NAMES.MAP} component={MapScreen} />
       <Tab.Screen name={SCREEN_NAMES.PLANNER} component={PlannerScreen} />
       <Tab.Screen name={SCREEN_NAMES.CHAT} component={ChatScreen} />
       <Tab.Screen name={SCREEN_NAMES.PROFILE} component={ProfileScreen} />
+      
     </Tab.Navigator>
   );
 }

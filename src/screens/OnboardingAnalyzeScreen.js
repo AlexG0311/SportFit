@@ -1,4 +1,3 @@
-// src/screens/OnboardingAnalyzeScreen.js
 import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,7 +13,7 @@ const OnboardingAnalyzeScreen = () => {
       // Como estamos dentro de MainTabs, podemos navegar a la pestaña Quiz
       navigation.replace(SCREEN_NAMES.QUIZ);
     }, 2000);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer);   
   }, []);
 
   return (

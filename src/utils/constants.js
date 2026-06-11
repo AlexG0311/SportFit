@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'http://192.168.100.11:8000';
+export const API_BASE_URL = 'http://10.248.103.229:8000';
+
+
 
 export const SOMATOTYPES = {
   ECTOMORPH: 'Ectomorfo',
@@ -50,4 +52,5 @@ export const SCREEN_NAMES = {
   CHAT: 'Chat',
   PLANNER: 'Planner',
   ACHIEVEMENTS: 'Achievements',
+   MAP: 'Mapa',  
 };
