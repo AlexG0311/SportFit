@@ -54,6 +54,9 @@ export const updateStreak = async () => {
   }
 };
 
+
+
+
 export const getStreak = async () => {
   try {
     const stored = await AsyncStorage.getItem(STREAK_KEY);
@@ -69,5 +72,16 @@ export const getStreak = async () => {
     return 0;
   } catch {
     return 0;
+  }
+};
+
+
+// Agrega esta función al final de src/services/quizHistoryService.js
+
+export const clearQuizHistory = async () => {
+  try {
+    await AsyncStorage.removeItem(QUIZ_HISTORY_KEY);
+  } catch (error) {
+    console.error('Error clearing quiz history:', error);
   }
 };

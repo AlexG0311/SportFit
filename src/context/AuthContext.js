@@ -81,21 +81,29 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'AUTH_LOADING' });
     try {
       // Static local admin login for development/testing
-      if (email === 'admin' && password === 'admin') {
-        const data = {
-          user: { id: 'admin', name: 'Admin', email: 'admin', height: 180, weight: 75, age: 30 },
-          token: 'local-admin-token',
-        };
-        await AsyncStorage.setItem('auth_token', data.token);
-        await AsyncStorage.setItem('auth_user', JSON.stringify(data.user));
-        dispatch({ type: 'AUTH_SUCCESS', payload: data });
-        return data;
-      }
-      const data = await loginUser(email, password);
-      await AsyncStorage.setItem('auth_token', data.token);
-      await AsyncStorage.setItem('auth_user', JSON.stringify(data.user));
-      dispatch({ type: 'AUTH_SUCCESS', payload: data });
-      return data;
+    if (email === 'admin' && password === 'admin') {
+      // Intentar cargar usuario previamente guardado
+      let savedUser = null;
+      try {
+        const userJson = await AsyncStorage.getItem('auth_user');
+        if (userJson) savedUser = JSON.parse(userJson);
+      } catch (e) {}
+
+      // Usar el usuario guardado (con somatotipo si existe) o crear uno por defecto
+      const user = savedUser || { 
+        id: 'admin', 
+        name: 'Admin', 
+        email: 'admin', 
+        height: 180, 
+        weight: 75, 
+        age: 30 
+      };
+      const token = 'local-admin-token';
+      await AsyncStorage.setItem('auth_token', token);
+      await AsyncStorage.setItem('auth_user', JSON.stringify(user));
+      dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+      return { user, token };
+}
     } catch (error) {
       dispatch({ type: 'AUTH_ERROR', payload: error.message || 'Error al iniciar sesión' });
       throw error;
@@ -119,6 +127,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await AsyncStorage.removeItem('auth_token');
     await AsyncStorage.removeItem('auth_user');
+    await AsyncStorage.removeItem('achievements'); 
     dispatch({ type: 'AUTH_LOGOUT' });
   };
 

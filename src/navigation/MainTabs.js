@@ -6,6 +6,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import PlannerScreen from '../screens/PlannerScreen';
 import { SCREEN_NAMES } from '../utils/constants';
 import QuizStack from './QuizStack';
+import { useAuth } from '../context/AuthContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -17,9 +18,15 @@ const TAB_CONFIG = {
   [SCREEN_NAMES.PROFILE]: { icon: 'person', iconOutline: 'person-outline', label: 'Perfil' },
 };
 
+
+
 export default function MainTabs() {
+ const { user } = useAuth();
+ console.log('User in MainTabs:', user);
+ const initialRoute = user?.somatotype ? SCREEN_NAMES.HOME : SCREEN_NAMES.QUIZ;
   return (
     <Tab.Navigator
+     initialRouteName={initialRoute}
       screenOptions={({ route }) => {
         const config = TAB_CONFIG[route.name] || TAB_CONFIG[SCREEN_NAMES.HOME];
         return {

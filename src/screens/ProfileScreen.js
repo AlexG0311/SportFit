@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, Image, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Card from '../components/common/Card';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SCREEN_NAMES, SOMATOTYPE_COLORS } from '../utils/constants';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
-import { getQuizHistory } from '../services/quizHistoryService';
+import { getQuizHistory, clearQuizHistory } from '../services/quizHistoryService';
 import { Ionicons } from '@expo/vector-icons';
 
 const ProfileScreen = () => {
@@ -23,9 +23,14 @@ const ProfileScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      getQuizHistory().then(setQuizHistory);
+      loadHistory();
     }, [])
   );
+
+  const loadHistory = async () => {
+    const history = await getQuizHistory();
+    setQuizHistory(history);
+  };
 
   const viewHistoryRecommendations = (entry) => {
     navigation.navigate(SCREEN_NAMES.QUIZ, {
@@ -36,6 +41,25 @@ const ProfileScreen = () => {
         fromQuiz: false,
       },
     });
+  };
+
+  const handleClearHistory = () => {
+    Alert.alert(
+      'Borrar historial',
+      '¿Estás seguro de que quieres eliminar todo el historial de cuestionarios? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            await clearQuizHistory();
+            await loadHistory(); // recargar la lista vacía
+            Alert.alert('Historial borrado', 'Todos los cuestionarios han sido eliminados.');
+          },
+        },
+      ]
+    );
   };
 
   const handleSave = () => {
@@ -187,9 +211,16 @@ const ProfileScreen = () => {
 
       {quizHistory.length > 0 && (
         <Card style={{ marginBottom: 20, padding: 16 }}>
-          <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginBottom: 14 }}>
-            Historial de cuestionarios
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+              Historial de cuestionarios
+            </Text>
+            <TouchableOpacity onPress={handleClearHistory}>
+              <Text style={{ color: '#FF5252', fontSize: 13, fontWeight: '500' }}>
+                Borrar todo
+              </Text>
+            </TouchableOpacity>
+          </View>
           {quizHistory.slice(0, 5).map((entry) => {
             const color = SOMATOTYPE_COLORS[entry.somatotype] || '#6C5CE7';
             return (

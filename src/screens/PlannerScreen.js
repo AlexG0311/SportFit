@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
 import { useGamification } from '../context/GamificationContext';
 import { generatePlanner } from '../services/coachService';
+
+const PLANNER_STORAGE_KEY = '@planner_plan';
+const COMPLETED_DAYS_KEY = '@planner_completed_days';
 
 const PlannerScreen = () => {
   const { user } = useAuth();
@@ -13,39 +17,109 @@ const PlannerScreen = () => {
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [completedDays, setCompletedDays] = useState({});
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Cargar plan guardado al montar el componente
+  useEffect(() => {
+    const loadSavedPlan = async () => {
+      try {
+        const savedPlan = await AsyncStorage.getItem(PLANNER_STORAGE_KEY);
+        const savedCompleted = await AsyncStorage.getItem(COMPLETED_DAYS_KEY);
+        if (savedPlan) {
+          setPlan(JSON.parse(savedPlan));
+        }
+        if (savedCompleted) {
+          setCompletedDays(JSON.parse(savedCompleted));
+        }
+      } catch (error) {
+        console.error('Error loading saved planner:', error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    loadSavedPlan();
+  }, []);
+
+  // Guardar plan cada vez que cambie
+  useEffect(() => {
+    if (plan) {
+      AsyncStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(plan)).catch(console.error);
+    }
+  }, [plan]);
+
+  // Guardar días completados cada vez que cambien
+  useEffect(() => {
+    AsyncStorage.setItem(COMPLETED_DAYS_KEY, JSON.stringify(completedDays)).catch(console.error);
+  }, [completedDays]);
 
   const handleGenerate = async () => {
-    if (!user?.somatotype) return;
+    if (!user?.somatotype) {
+      Alert.alert('Información faltante', 'Completa primero el cuestionario de somatotipo.');
+      return;
+    }
     setLoading(true);
     try {
-      
       const response = await generatePlanner(
         user.somatotype,
-        4, // Default to 4 days for now
-        "ganar masa muscular y fuerza", 
+        4, // días por semana (puedes ajustar)
+        "ganar masa muscular y fuerza",
         "intermedio"
       );
-
       if (response.success && response.plan) {
         setPlan(response.plan);
+        // No reseteamos completedDays al generar nuevo plan (opcional, podrías resetear)
+        // Si quieres resetear los completados al generar nueva rutina, descomenta:
+        // setCompletedDays({});
         unlockAchievement('planner_gen');
+      } else {
+        Alert.alert('Error', 'No se pudo generar la rutina. Inténtalo de nuevo.');
       }
     } catch (error) {
       console.error(error);
+      Alert.alert('Error', 'Hubo un problema al generar la rutina.');
     } finally {
       setLoading(false);
     }
   };
 
   const toggleDay = (dayIndex) => {
-    const newCompletedDays = { ...completedDays, [dayIndex]: !completedDays[dayIndex] };
-    setCompletedDays(newCompletedDays);
-    
-    // Si completan al menos un día
-    if (newCompletedDays[dayIndex]) {
-      unlockAchievement('workout_done');
-    }
+    setCompletedDays(prev => {
+      const newCompleted = { ...prev, [dayIndex]: !prev[dayIndex] };
+      if (newCompleted[dayIndex]) {
+        unlockAchievement('workout_done');
+      }
+      return newCompleted;
+    });
   };
+
+  const resetPlan = () => {
+    Alert.alert(
+      'Borrar rutina',
+      '¿Eliminar la rutina actual? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Borrar',
+          style: 'destructive',
+          onPress: async () => {
+            setPlan(null);
+            setCompletedDays({});
+            await AsyncStorage.removeItem(PLANNER_STORAGE_KEY);
+            await AsyncStorage.removeItem(COMPLETED_DAYS_KEY);
+          },
+        },
+      ]
+    );
+  };
+
+  if (initialLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#08080B', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#6C5CE7" />
+        <Text style={{ color: 'white', marginTop: 16 }}>Cargando tu rutina...</Text>
+      </View>
+    );
+  }
 
   if (!user?.somatotype) {
     return (
@@ -61,9 +135,16 @@ const PlannerScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#08080B' }}>
-      <View style={{ padding: 16, paddingTop: 20, backgroundColor: '#15151A', borderBottomWidth: 1, borderBottomColor: '#1E1E2E' }}>
-        <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>Tu Semana</Text>
-        <Text style={{ color: '#8B8BA3' }}>Rutina basada en tu somatotipo ({user.somatotype})</Text>
+      <View style={{ padding: 16, paddingTop: 20, backgroundColor: '#15151A', borderBottomWidth: 1, borderBottomColor: '#1E1E2E', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View>
+          <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>Tu Semana</Text>
+          <Text style={{ color: '#8B8BA3' }}>Rutina basada en tu somatotipo ({user.somatotype})</Text>
+        </View>
+        {plan && (
+          <TouchableOpacity onPress={resetPlan} style={{ padding: 8 }}>
+            <Ionicons name="trash-outline" size={24} color="#FF5252" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
